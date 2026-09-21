@@ -76,7 +76,7 @@
         dest: "/etc/NetworkManager/conf.d/rke2-canal.conf"
         mode: '0644'
 
-    - name: Restart NetworkManager asynchronously
+    - name: Restart NetworkManager asynchronously # noqa no-changed-when
       ansible.builtin.shell: >
         sleep 2 && systemctl restart NetworkManager
       async: 45

@@ -1,4 +1,4 @@
-# noqa
+# noqa var-naming[no-role-prefix]
 ---
 cp_nodes:
   - "ycd-rke2-cp1.ycdisp.net"
