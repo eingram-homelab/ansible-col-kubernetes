@@ -18,9 +18,11 @@
     dest: "{{ dest }}"
     mode: '0644'
   loop:
-    - ccm-rbac.yaml
-    - csi.yaml
-    - storageclass.yaml
+    - vsphere-ccm.yaml
+    - vsphere-csi-driver.yaml
+    - vsphere-csi-storageclass.yaml
+    - vc-root-ca-cert-csi.yaml
+    - vc-root-ca-cert-ccm.yaml
 
 - name: Create templated files
   ansible.builtin.template:
@@ -34,14 +36,23 @@
   loop_control:
     loop_var: csi_item
 
+- name: Read csi-vsphere.conf
+  ansible.builtin.slurp:
+    src: "{{ dest }}csi-vsphere.conf"
+  register: vsphere_csi_conf
+
 - name: Create secret from csi-vsphere.conf
-  ansible.builtin.shell:
-    cmd: >
-      kubectl create secret generic vsphere-config-secret
-      --namespace=vmware-system-csi
-      --from-file={{ dest }}csi-vsphere.conf
-      --dry-run=client
-      -o yaml | kubectl apply -f -
+  kubernetes.core.k8s:
+    state: present
+    definition:
+      apiVersion: v1
+      kind: Secret
+      metadata:
+        name: vsphere-config-secret
+        namespace: vmware-system-csi
+      type: Opaque
+      data:
+        csi-vsphere.conf: "{{ vsphere_csi_conf.content }}"
 
 - name: Deploy vsphere-csi manifests
   kubernetes.core.k8s:
@@ -49,13 +60,17 @@
     state: present
   loop:
     - vsphere-cloud-secret.yaml
-    - ccm-rbac.yaml
-    - csi.yaml
+    - vsphere-ccm.yaml
+    - vsphere-csi-driver.yaml
     - vsphere-cloud-config.yaml
-    - storageclass.yaml
+    - vsphere-csi-storageclass.yaml
+    - vc-root-ca-cert-csi.yaml
+    - vc-root-ca-cert-ccm.yaml
 
 - name: Set vsphere-csi as default storageclass
+  when: k8s_dist != "rke2"
   ansible.builtin.shell: |
+    set -eou pipefail
     storageclass_list=$(kubectl get storageclass | grep '(default)' | cut -d ' ' -f 1)
     CURRENT_IFS=$IFS
     IFS=$'\n' read -r -d '' -a array <<< "$storageclass_list"
@@ -69,10 +84,10 @@
     kubectl patch storageclass vsphere-csi -p '{"metadata": {"annotations":{"storageclass.kubernetes.io/is-default-class":"true"}}}'
   args:
     executable: /bin/bash
-  register: patch_result
-  changed_when: patch_result.stdout != ""
+  register: vsphere_csi_patch_result
+  changed_when: vsphere_csi_patch_result.stdout != ""
 
 - name: Debug patch result
+  when: vsphere_csi_patch_result.stdout is defined
   ansible.builtin.debug:
-    msg: "{{ patch_result.stdout }}"
-  when: patch_result.stdout != ""
+    msg: "{{ vsphere_csi_patch_result.stdout }}"

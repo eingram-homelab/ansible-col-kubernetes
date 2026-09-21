@@ -1,0 +1,115 @@
+---
+- name: Populate service facts
+  ansible.builtin.service_facts:
+
+- name: Create config directory - {{ k8s_dist }}
+  ansible.builtin.file:
+    path: "/etc/rancher/{{ k8s_dist }}/config.yaml.d"
+    state: directory
+    mode: '0755'
+    recurse: true
+
+- name: Create kubelet config file
+  ansible.builtin.copy:
+    src: "kubelet-limits.yaml"
+    dest: "/etc/rancher/{{ k8s_dist }}/config.yaml.d/kubelet-limits.yaml"
+    mode: '0644'
+
+- name: Create base config file for worker node - {{ k8s_dist }}
+  ansible.builtin.template:
+    src: "{{ k8s_dist }}-worker.yaml.j2"
+    dest: "/etc/rancher/{{ k8s_dist }}/config.yaml"
+    mode: '0644'
+
+- name: Create vsphere_csi config file
+  when: "'vsphere_csi' in hostvars['localhost']['base_components']"
+  block:
+    - name: Get VM ID
+      delegate_to: localhost
+      community.vmware.vmware_vm_info:
+        hostname: "{{ hostvars['localhost']['vsphere_env'] }}"
+        username: "{{ lookup('hashi_vault', 'secret/vsphere/vcsa:vsphere_username') }}"
+        password: "{{ lookup('hashi_vault', 'secret/vsphere/vcsa:vsphere_password') }}"
+        validate_certs: true
+        vm_name: "{{ hostvars[inventory_hostname]['ansible_hostname'] }}"
+      register: k8s_vm_info
+
+    - name: Create vsphere_csi config file
+      ansible.builtin.template:
+        src: "vsphere_csi_worker.yaml.j2"
+        dest: "/etc/rancher/{{ k8s_dist }}/config.yaml.d/vsphere-csi.yaml"
+        mode: '0644'
+
+- name: Download installer script - {{ k8s_dist }}
+  when:
+    - ansible_facts['services'][k8s_dist ~ '-agent.service'] is not defined
+  ansible.builtin.get_url:
+    url: "https://get.{{ k8s_dist }}.io"
+    dest: "/tmp/{{ k8s_dist }}-installer.sh"
+    mode: '0755'
+
+- name: Install K3S specific tasks
+  when: >
+    k8s_dist is defined and k8s_dist == 'k3s'
+    and (ansible_facts['services'][k8s_dist ~ '-agent.service'] is not defined
+    or ansible_facts['services'][k8s_dist ~ '-agent.service'].state != 'running')
+  block:
+    - name: Install K3S agent
+      ansible.builtin.shell: >
+        set -eou pipefail &&
+        /tmp/{{ k8s_dist }}-installer.sh
+      environment:
+        INSTALL_K3S_EXEC: "agent"
+        INSTALL_K3S_VERSION: "{{ k8s_ver }}"
+      register: rancher_k8s_cp_install_status
+      changed_when: rancher_k8s_cp_install_status.rc == 0
+
+- name: Install RKE2 specific tasks
+  when: >
+    k8s_dist is defined and k8s_dist == 'rke2'
+    and (ansible_facts['services'][k8s_dist ~ '-agent.service'] is not defined
+    or ansible_facts['services'][k8s_dist ~ '-agent.service'].state != 'running')
+  block:
+    - name: Copy NetworkManager config file to host
+      ansible.builtin.copy:
+        src: "rke2-canal.conf"
+        dest: "/etc/NetworkManager/conf.d/rke2-canal.conf"
+        mode: '0644'
+
+    - name: Restart NetworkManager asynchronously
+      ansible.builtin.shell: >
+        sleep 2 && systemctl restart NetworkManager
+      async: 45
+      poll: 0
+
+    - name: Reset the SSH connection channel
+      ansible.builtin.meta: reset_connection
+
+    - name: Wait for the network interface to re-establish
+      ansible.builtin.wait_for_connection:
+        delay: 5
+        timeout: 60
+
+    - name: Install RKE2 agent
+      ansible.builtin.shell: >
+        set -eou pipefail &&
+        /tmp/{{ k8s_dist }}-installer.sh
+      environment:
+        INSTALL_RKE2_TYPE: "agent"
+        INSTALL_RKE2_VERSION: "{{ k8s_ver }}"
+      register: rancher_agent_install_status
+      changed_when: rancher_agent_install_status.rc == 0
+
+- name: Debug install status - {{ k8s_dist }}
+  ansible.builtin.debug:
+    var: rancher_agent_install_status
+
+- name: Install service - {{ k8s_dist }}
+  ansible.builtin.systemd:
+    name: "{{ k8s_dist }}-agent"
+    enabled: true
+    state: started
+  retries: 10
+  delay: 10
+  register: rancher_k8s_service_status
+  until: rancher_k8s_service_status is succeeded

@@ -1,10 +1,14 @@
 [Global]
-cluster-id = "{{ cluster }}"
-cluster-distribution = "k3s"
+cluster-id = "{{ cluster_name }}"
+cluster-distribution = "{{ k8s_dist }}"
 
-[VirtualCenter "192.168.1.200"]
-insecure-flag = "true"
-user = "csi@vsphere.local"
-password = "{{ lookup('hashi_vault', 'secret/vsphere/vcsa:vsphere_password') }}"
+[VirtualCenter "{{ vsphere_env }}"]
+insecure-flag = "false"
+ca-file = /etc/ssl/certs/root.ca
+user = "vsphere-csi@ycdisp.com"
+password = "{{ lookup('hashi_vault', 'secret/ssh/eingram:ssh_password') }}"
 port = "443"
-datacenters = "HomeLab Datacenter"
+datacenters = "{{ vsphere_datacenter }}"
+
+[Labels]
+topology-categories = "k8s-region, k8s-zone"
