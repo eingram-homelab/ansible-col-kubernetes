@@ -1,0 +1,12 @@
+server: https://{{ hostvars['localhost']['cp_nodes'][0] }}:9345
+token: {{ lookup('hashi_vault', 'secret=secret/ssh/ansible:ssh_password') }}
+selinux: true
+kubelet-arg:
+  - container-log-max-files=4
+  - container-log-max-size=50Mi
+  - image-gc-high-threshold=50
+  - image-gc-low-threshold=40
+node-label:
+  - 'node_type=worker'
+kube-proxy-arg:
+  - 'metrics-bind-address=0.0.0.0'

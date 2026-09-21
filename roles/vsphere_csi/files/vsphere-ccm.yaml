@@ -172,13 +172,16 @@ spec:
         - key: node.kubernetes.io/not-ready
           effect: NoSchedule
           operator: Exists
+        - key: CriticalAddonsOnly
+          operator: Exists
+          effect: NoExecute
       securityContext:
         runAsUser: 1001
       serviceAccountName: cloud-controller-manager
       priorityClassName: system-node-critical
       containers:
         - name: vsphere-cloud-controller-manager
-          image: registry.k8s.io/cloud-pv-vsphere/cloud-provider-vsphere:v1.31.1
+          image: registry.k8s.io/cloud-pv-vsphere/cloud-provider-vsphere:v1.35.0
           args:
             - --cloud-provider=vsphere
             - --v=2
@@ -186,6 +189,9 @@ spec:
           volumeMounts:
             - mountPath: /etc/cloud
               name: vsphere-config-volume
+              readOnly: true
+            - mountPath: /etc/ssl/certs
+              name: vc-root-ca-cert-ccm
               readOnly: true
           resources:
             requests:
@@ -195,13 +201,18 @@ spec:
         - name: vsphere-config-volume
           configMap:
             name: vsphere-cloud-config
+        - name: vc-root-ca-cert-ccm
+          configMap:
+            name: vc-root-ca-cert-ccm
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - matchExpressions:
                   - key: node-role.kubernetes.io/control-plane
-                    operator: Exists
+                    operator: In
+                    values:
+                      - "true"
               - matchExpressions:
                   - key: node-role.kubernetes.io/master
                     operator: Exists

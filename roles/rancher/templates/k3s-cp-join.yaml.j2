@@ -1,0 +1,25 @@
+disable:
+  - "servicelb"
+selinux: true
+write-kubeconfig-mode: 644
+cluster-init: false
+kubelet-arg:
+  - container-log-max-files=4
+  - container-log-max-size=50Mi
+  - image-gc-high-threshold=50
+  - image-gc-low-threshold=40
+etcd-expose-metrics: true
+tls-san: 
+  - "{{ hostvars['localhost']['cluster_ip'] }}"
+kube-controller-manager-arg:
+  - 'bind-address=0.0.0.0'
+  - 'terminated-pod-gc-threshold=10'
+kube-proxy-arg: 
+  - 'metrics-bind-address=0.0.0.0'
+kube-scheduler-arg: 
+  - 'bind-address=0.0.0.0'
+kube-apiserver-arg:
+  - max-requests-inflight=400
+  - max-mutating-requests-inflight=200
+  - min-request-timeout=300
+server: https://{{ hostvars['localhost']['cp_nodes'][0] }}:6443

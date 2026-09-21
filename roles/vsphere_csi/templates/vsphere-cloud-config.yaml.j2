@@ -13,18 +13,19 @@ data:
     global:
       port: 443
       # set insecureFlag to true if the vCenter uses a self-signed cert
-      insecureFlag: true
+      insecureFlag: false
+      ca-file: /etc/ssl/certs/root.ca
       # settings for using k8s secret
       secretName: vsphere-cloud-secret
       secretNamespace: kube-system
 
     # vcenter section
     vcenter:
-      vcsa-1:
-        server: 192.168.1.200
+      {{ vsphere_env }}:
+        server: "{{ vsphere_env }}"
         datacenters:
-          - HomeLab Datacenter
+          - "{{ vsphere_datacenter }}"
 
-    # labels:
-    #   region: k8s-region
-    #   zone: k8s-zone
+    labels:
+      k8s-region: {{ k8s_region }}
+      k8s-zone: {{ k8s_zone }}

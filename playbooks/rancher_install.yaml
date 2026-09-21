@@ -1,0 +1,129 @@
+---
+- name: Set build env
+  hosts: localhost
+  gather_facts: false
+  become: false
+
+  tasks:
+
+    # Need to run this to get node names
+    - name: Load cluster vars
+      ansible.builtin.include_role:
+        name: eingram23.kubernetes.rancher
+        tasks_from: cluster_env
+
+- name: Install k8s control plane on first node (cluster-init)
+  hosts: "{{ hostvars['localhost']['cp_nodes'][0] | default([]) }}"
+  gather_facts: true
+  become: true
+
+  tasks:
+
+    - name: Load cluster vars
+      ansible.builtin.include_role:
+        name: eingram23.kubernetes.rancher
+        tasks_from: cluster_env
+
+    - name: Run k8s prereq role
+      ansible.builtin.include_role:
+        name: eingram23.kubernetes.rancher
+        tasks_from: prereq
+
+    - name: Run control plane role with cluster-init
+      ansible.builtin.include_role:
+        name: eingram23.kubernetes.rancher
+        tasks_from: control_plane
+
+    - name: Create kubeconfig secret in hashi vault
+      ansible.builtin.include_role:
+        name: eingram23.kubernetes.kubeconfig
+        tasks_from: kubeconfig_to_vault
+
+    # needed to remove uninitialized taint
+    - name: Deploy vsphere-csi
+      when: "'vsphere_csi' in hostvars['localhost']['base_components']"
+      delegate_to: localhost
+      block:
+        - name: Create local kubeconfig
+          ansible.builtin.include_role:
+            name: eingram23.kubernetes.kubeconfig
+            tasks_from: create_local_kubeconfig
+
+        - name: Run vsphere_csi role
+          ansible.builtin.include_role:
+            name: eingram23.kubernetes.vsphere_csi
+
+- name: Install k8s control plane on remaining nodes
+  hosts: "{{ (hostvars['localhost']['cp_nodes'] | default([]))[1:] }}"
+  gather_facts: true
+  become: true
+
+  tasks:
+
+    - name: Load cluster vars
+      ansible.builtin.include_role:
+        name: eingram23.kubernetes.rancher
+        tasks_from: cluster_env
+
+    - name: Run k8s prereq role
+      ansible.builtin.include_role:
+        name: eingram23.kubernetes.rancher
+        tasks_from: prereq
+
+    - name: Run control plane role
+      ansible.builtin.include_role:
+        name: eingram23.kubernetes.rancher
+        tasks_from: control_plane
+
+    # - name: Create kubeconfig secret in hashi vault
+    #   ansible.builtin.include_role:
+    #     name: eingram23.kubernetes.rancher
+    #     tasks_from: rancher_to_vault
+
+- name: Install k8s worker nodes
+  hosts: "{{ hostvars['localhost']['worker_nodes'] | default([]) }}"
+  gather_facts: true
+  become: true
+
+  tasks:
+
+    - name: Load cluster vars
+      ansible.builtin.include_role:
+        name: eingram23.kubernetes.rancher
+        tasks_from: cluster_env
+
+    - name: Run k8s prereq role
+      ansible.builtin.include_role:
+        name: eingram23.kubernetes.rancher
+        tasks_from: prereq
+
+    - name: Install worker nodes
+      ansible.builtin.include_role:
+        name: eingram23.kubernetes.rancher
+        tasks_from: worker
+
+# - name: Post k8s install tasks
+#   hosts: localhost
+#   gather_facts: true
+#   become: false
+
+#   tasks:
+
+#     - name: Deploy base components
+#       ansible.builtin.include_role:
+#         name: eingram23.kubernetes.{{ component_item }}
+#       loop: "{{ base_components }}"
+#       loop_control:
+#         loop_var: component_item
+
+# - name: Deploy k8s-metrics-service
+#   hosts: localhost
+#   gather_facts: false
+#   become: false
+
+#   tasks:
+
+#     - name: Deploy k8s-metrics-service
+#       ansible.builtin.include_role:
+#         name: eingram23.kubernetes.rancher
+#         tasks_from: k8s-metrics-service

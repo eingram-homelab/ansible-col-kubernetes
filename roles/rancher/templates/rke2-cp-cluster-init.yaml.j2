@@ -1,5 +1,3 @@
-disable:
-  - "servicelb"
 selinux: true
 write-kubeconfig-mode: 644
 cluster-init: true
@@ -15,7 +13,8 @@ etcd-arg:
   - snapshot-count=5000
   - quota-backend-bytes=2147483648
 tls-san: 
-  - "{{ hostvars['localhost']['lb_ip'] }}"
+  - "{{ hostvars['localhost']['cluster_ip'] }}"
+  - "{{ hostvars['localhost']['cluster_name'] + '.ycdisp.net' }}"
 kube-controller-manager-arg:
   - 'bind-address=0.0.0.0'
   - 'terminated-pod-gc-threshold=10'
@@ -27,3 +26,11 @@ kube-apiserver-arg:
   - max-requests-inflight=400
   - max-mutating-requests-inflight=200
   - min-request-timeout=300
+node-taint:
+  - "CriticalAddonsOnly=true:NoExecute"
+control-plane-resource-requests:
+  - kube-apiserver-cpu=500m
+  - kube-apiserver-memory=512M
+  - kube-scheduler-cpu=250m
+  - kube-scheduler-memory=512M
+  - etcd-cpu=1000m

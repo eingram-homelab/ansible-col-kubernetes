@@ -1,0 +1,27 @@
+---
+cp_nodes:
+  - "ycd-rke2-cp1.ycdisp.net"
+  - "ycd-rke2-cp2.ycdisp.net"
+  - "ycd-rke2-cp3.ycdisp.net"
+worker_nodes:
+  - "ycd-rke2-wk1.ycdisp.net"
+  - "ycd-rke2-wk2.ycdisp.net"
+  - "ycd-rke2-wk3.ycdisp.net"
+
+cluster_ip: "10.20.0.247"
+cluster_name: "ycd-rke2"
+
+base_components:
+  - vsphere_csi
+  - ingress_nginx
+  - argocd
+  - vault
+  - external_secrets
+  - external_dns
+
+vsphere_env: vcsa-2.company.ycdisp.com
+vsphere_datacenter: "HomeLab Datacenter 2"
+k8s_ver: "v1.35.8+rke2r1"
+k8s_dist: "rke2"
+k8s_region: "region-2"
+k8s_zone: "zone-a"
