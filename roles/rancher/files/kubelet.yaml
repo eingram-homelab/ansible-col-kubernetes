@@ -9,3 +9,6 @@ kubelet-arg+:
   - eviction-soft=memory.available<200Mi,nodefs.available<15%,imagefs.available<20%
   # Grace period before soft eviction triggers
   - eviction-soft-grace-period=memory.available=1m30s,nodefs.available=1m30s,imagefs.available=1m30s
+  # Restrict kubelet API access
+  - anonymous-auth=false
+  - authorization-mode=Webhook

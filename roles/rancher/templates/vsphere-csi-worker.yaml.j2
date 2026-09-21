@@ -1,0 +1,3 @@
+kubelet-arg+: 
+  - provider-id=vsphere://{{ rancher_k8s_vm_info.virtual_machines[0].uuid }}
+  - cloud-provider=external

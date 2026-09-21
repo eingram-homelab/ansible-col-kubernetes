@@ -8,12 +8,7 @@ kubelet-arg:
   - container-log-max-size=50Mi
   - image-gc-high-threshold=50
   - image-gc-low-threshold=40
-etcd-expose-metrics: true
-etcd-arg:
-  - auto-compaction-mode=periodic
-  - auto-compaction-retention=1h
-  - snapshot-count=5000
-  - quota-backend-bytes=2147483648
+
 tls-san: 
   - "{{ hostvars['localhost']['cluster_ip'] }}"
   - "{{ hostvars['localhost']['cluster_name'] + '.ycdisp.net' }}"

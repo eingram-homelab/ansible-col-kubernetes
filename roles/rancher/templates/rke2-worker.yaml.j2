@@ -7,6 +7,8 @@ kubelet-arg:
   - image-gc-high-threshold=50
   - image-gc-low-threshold=40
 node-label:
-  - 'node_type=worker'
+  - role=worker
+  - region={{ k8s_region }}
+  - zone={{ k8s_zone }}
 kube-proxy-arg:
-  - 'metrics-bind-address=0.0.0.0'
+  - metrics-bind-address=0.0.0.0

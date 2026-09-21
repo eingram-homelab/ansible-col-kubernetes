@@ -11,7 +11,7 @@
 
 - name: Create kubelet config file
   ansible.builtin.copy:
-    src: "kubelet-limits.yaml"
+    src: "kubelet.yaml"
     dest: "/etc/rancher/{{ k8s_dist }}/config.yaml.d/kubelet-limits.yaml"
     mode: '0644'
 
@@ -32,11 +32,11 @@
         password: "{{ lookup('hashi_vault', 'secret/vsphere/vcsa:vsphere_password') }}"
         validate_certs: true
         vm_name: "{{ hostvars[inventory_hostname]['ansible_hostname'] }}"
-      register: k8s_vm_info
+      register: rancher_k8s_vm_info
 
-    - name: Create vsphere_csi config file
+    - name: Create vsphere-csi config file
       ansible.builtin.template:
-        src: "vsphere_csi_worker.yaml.j2"
+        src: "vsphere-csi-worker.yaml.j2"
         dest: "/etc/rancher/{{ k8s_dist }}/config.yaml.d/vsphere-csi.yaml"
         mode: '0644'
 
@@ -76,7 +76,7 @@
         dest: "/etc/NetworkManager/conf.d/rke2-canal.conf"
         mode: '0644'
 
-    - name: Restart NetworkManager asynchronously
+    - name: Restart NetworkManager asynchronously # noqa no-changed-when
       ansible.builtin.shell: >
         sleep 2 && systemctl restart NetworkManager
       async: 45

@@ -1,0 +1,15 @@
+etcd-expose-metrics: true
+
+etcd-arg:
+  - auto-compaction-mode=periodic
+  - auto-compaction-retention=1h
+  - max-request-bytes=33554432 # 32MB
+  - snapshot-count=5000
+  - quota-backend-bytes=2147483648 # 2GB
+  - heartbeat-interval=100
+  - election-timeout=1000
+  - tls-min-version=TLS1.2
+
+etcd-snapshot-schedule-cron: "0 */12 * * *"
+etcd-snapshot-retention: 5
+etcd-snapshot-dir: "/var/lib/rancher/{{ k8s_dist }}/server/db/snapshots"

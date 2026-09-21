@@ -1,36 +1,32 @@
 selinux: true
 write-kubeconfig-mode: 644
-cluster-init: true
 kubelet-arg:
   - container-log-max-files=4
   - container-log-max-size=50Mi
   - image-gc-high-threshold=50
   - image-gc-low-threshold=40
-etcd-expose-metrics: true
-etcd-arg:
-  - auto-compaction-mode=periodic
-  - auto-compaction-retention=1h
-  - snapshot-count=5000
-  - quota-backend-bytes=2147483648
-tls-san: 
-  - "{{ hostvars['localhost']['cluster_ip'] }}"
-  - "{{ hostvars['localhost']['cluster_name'] + '.ycdisp.net' }}"
 kube-controller-manager-arg:
-  - 'bind-address=0.0.0.0'
-  - 'terminated-pod-gc-threshold=10'
+  - bind-address=0.0.0.0
+  - terminated-pod-gc-threshold=10
 kube-proxy-arg: 
-  - 'metrics-bind-address=0.0.0.0'
+  - metrics-bind-address=0.0.0.0
 kube-scheduler-arg: 
-  - 'bind-address=0.0.0.0'
+  - bind-address=0.0.0.0
 kube-apiserver-arg:
   - max-requests-inflight=400
   - max-mutating-requests-inflight=200
   - min-request-timeout=300
-node-taint:
-  - "CriticalAddonsOnly=true:NoExecute"
+  - admission-control-config-file=/etc/rancher/{{ k8s_dist }}/pss.yaml
+  - enable-admission-plugins=NodeRestriction,PodSecurity
+  - anonymous-auth=false
 control-plane-resource-requests:
   - kube-apiserver-cpu=500m
   - kube-apiserver-memory=512M
   - kube-scheduler-cpu=250m
   - kube-scheduler-memory=512M
   - etcd-cpu=1000m
+  - etcd-memory=1024M
+node-label:
+  - region={{ k8s_region }}
+  - zone={{ k8s_zone }}
+  - role=control-plane
