@@ -32,7 +32,7 @@
         password: "{{ lookup('hashi_vault', 'secret/vsphere/vcsa:vsphere_password') }}"
         validate_certs: true
         vm_name: "{{ hostvars[inventory_hostname]['ansible_hostname'] }}"
-      register: k8s_vm_info
+      register: rancher_k8s_vm_info
 
     - name: Create vsphere-csi config file
       ansible.builtin.template:

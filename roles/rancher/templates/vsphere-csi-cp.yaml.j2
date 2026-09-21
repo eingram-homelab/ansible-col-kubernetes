@@ -3,4 +3,4 @@ disable+:
   - local-storage
 kubelet-arg+:
   - cloud-provider=external
-  - provider-id=vsphere://{{ k8s_vm_info.virtual_machines[0].uuid }}
+  - provider-id=vsphere://{{ rancher_k8s_vm_info.virtual_machines[0].uuid }}
