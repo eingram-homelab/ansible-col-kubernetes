@@ -1,22 +1,21 @@
-# noqa var-naming[no-role-prefix]
 ---
-cp_nodes:
+cp_nodes: # noqa var-naming[no-role-prefix]
   - "ycd-rke2-cp1.ycdisp.net"
   - "ycd-rke2-cp2.ycdisp.net"
   - "ycd-rke2-cp3.ycdisp.net"
-worker_nodes:
+worker_nodes: # noqa var-naming[no-role-prefix]
   - "ycd-rke2-wk1.ycdisp.net"
   - "ycd-rke2-wk2.ycdisp.net"
   - "ycd-rke2-wk3.ycdisp.net"
 
-cluster_cidr: "10.42.0.0/16"
-service_cidr: "10.43.0.0/16"
-cluster_dns: "10.43.0.10"
-cluster_ip: "10.20.0.247"
-cluster_name: "ycd-rke2"
-dedicated_cp_nodes: true
+cluster_cidr: "10.42.0.0/16" # noqa var-naming[no-role-prefix]
+service_cidr: "10.43.0.0/16" # noqa var-naming[no-role-prefix]
+cluster_dns: "10.43.0.10" # noqa var-naming[no-role-prefix]
+cluster_ip: "10.20.0.247" # noqa var-naming[no-role-prefix]
+cluster_name: "ycd-rke2" # noqa var-naming[no-role-prefix]
+dedicated_cp_nodes: true # noqa var-naming[no-role-prefix]
 
-base_components:
+base_components: # noqa var-naming[no-role-prefix]
   - vsphere_csi
   - ingress_nginx
   - argocd
@@ -24,9 +23,9 @@ base_components:
   - external_secrets
   - external_dns
 
-vsphere_env: vcsa-2.company.ycdisp.com
-vsphere_datacenter: "HomeLab Datacenter 2"
-k8s_ver: "v1.35.8+rke2r1"
-k8s_dist: "rke2"
-k8s_region: "region-2"
-k8s_zone: "zone-a"
+vsphere_env: vcsa-2.company.ycdisp.com # noqa var-naming[no-role-prefix]
+vsphere_datacenter: "HomeLab Datacenter 2" # noqa var-naming[no-role-prefix]
+k8s_ver: "v1.35.8+rke2r1" # noqa var-naming[no-role-prefix]
+k8s_dist: "rke2" # noqa var-naming[no-role-prefix]
+k8s_region: "region-2" # noqa var-naming[no-role-prefix]
+k8s_zone: "zone-a" # noqa var-naming[no-role-prefix]
