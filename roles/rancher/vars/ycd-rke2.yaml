@@ -8,8 +8,12 @@ worker_nodes:
   - "ycd-rke2-wk2.ycdisp.net"
   - "ycd-rke2-wk3.ycdisp.net"
 
+cluster_cidr: "10.42.0.0/16"
+service_cidr: "10.43.0.0/16"
+cluster_dns: "10.43.0.10"
 cluster_ip: "10.20.0.247"
 cluster_name: "ycd-rke2"
+dedicated_cp_nodes: true
 
 base_components:
   - vsphere_csi

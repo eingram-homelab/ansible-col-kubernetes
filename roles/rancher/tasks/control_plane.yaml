@@ -8,25 +8,6 @@
     dest: "/etc/yum.repos.d/kubernetes.repo"
     mode: '0644'
 
-- name: Install kubectl
-  ansible.builtin.dnf:
-    name: kubectl
-    state: present
-    update_cache: true
-
-- name: Check if crictl is installed
-  ansible.builtin.stat:
-    path: "/usr/local/bin/crictl"
-  register: rancher_crictl_stat
-
-- name: Install cri-tools
-  when: not rancher_crictl_stat.stat.exists
-  ansible.builtin.shell: |
-    VERSION="v1.37.0"
-    wget https://github.com/kubernetes-sigs/cri-tools/releases/download/$VERSION/crictl-$VERSION-linux-amd64.tar.gz
-    sudo tar zxvf crictl-$VERSION-linux-amd64.tar.gz -C /usr/local/bin
-    rm -f crictl-$VERSION-linux-amd64.tar.gz
-
 - name: Create config directory - {{ k8s_dist }}
   ansible.builtin.file:
     path: "/etc/rancher/{{ k8s_dist }}/config.yaml.d"
@@ -34,25 +15,56 @@
     mode: '0755'
     recurse: true
 
-- name: Create kubelet config file
+- name: Copy kubelet config file
   ansible.builtin.copy:
-    src: "kubelet-limits.yaml"
+    src: "kubelet.yaml"
     dest: "/etc/rancher/{{ k8s_dist }}/config.yaml.d/kubelet-limits.yaml"
     mode: '0644'
 
-- name: Create base config file for first cp node - {{ k8s_dist }}
-  when: inventory_hostname == hostvars['localhost']['cp_nodes'][0]
+- name: Create base config on control plane nodes
   ansible.builtin.template:
-    src: "{{ k8s_dist }}-cp-cluster-init.yaml.j2"
+    src: "{{ k8s_dist }}-cp-base.yaml.j2"
     dest: "/etc/rancher/{{ k8s_dist }}/config.yaml"
     mode: '0644'
 
-- name: Create base config file for additional cp nodes - {{ k8s_dist }}
-  when: inventory_hostname != hostvars['localhost']['cp_nodes'][0]
-  ansible.builtin.template:
-    src: "{{ k8s_dist }}-cp-join.yaml.j2"
-    dest: "/etc/rancher/{{ k8s_dist }}/config.yaml"
+- name: Copy Pod Security Standards config file
+  ansible.builtin.copy:
+    src: "pss.yaml"
+    dest: "/etc/rancher/{{ k8s_dist }}/pss.yaml"
     mode: '0644'
+
+- name: Create templated configs to control plane nodes - {{ k8s_dist }}
+  ansible.builtin.template:
+    src: "{{ template_file }}.j2"
+    dest: "/etc/rancher/{{ k8s_dist }}/config.yaml.d/{{ template_file }}"
+    mode: '0644'
+  loop:
+    - etcd.yaml
+    - tls.yaml
+    - networking.yaml
+  loop_control:
+    loop_var: template_file
+
+- name: Taint control plane nodes for dedicated control plane setup - {{ k8s_dist }}
+  when: hostvars['localhost']['dedicated_cp_nodes']
+  ansible.builtin.copy:
+    src: "{{ k8s_dist }}-cp-taint.yaml"
+    dest: "/etc/rancher/{{ k8s_dist }}/config.yaml.d/cp-taint.yaml"
+    mode: '0644'
+
+- name: Set cluster init for first cp node - {{ k8s_dist }}
+  when: inventory_hostname == hostvars['localhost']['cp_nodes'][0]
+  ansible.builtin.lineinfile:
+    path: "/etc/rancher/{{ k8s_dist }}/config.yaml"
+    line: "cluster-init: true"
+    insertafter: EOF
+
+- name: Set server join for additional cp nodes - {{ k8s_dist }}
+  when: inventory_hostname != hostvars['localhost']['cp_nodes'][0]
+  ansible.builtin.lineinfile:
+    path: "/etc/rancher/{{ k8s_dist }}/config.yaml"
+    line: "server: https://{{ hostvars['localhost']['cp_nodes'][0] }}:9345"
+    insertafter: EOF
 
 - name: Insert token-file parameter
   ansible.builtin.lineinfile:
@@ -90,9 +102,9 @@
         vm_name: "{{ hostvars[inventory_hostname]['ansible_hostname'] }}"
       register: k8s_vm_info
 
-    - name: Create vsphere_csi config file
+    - name: Create vsphere-csi config file
       ansible.builtin.template:
-        src: "vsphere_csi_cp.yaml.j2"
+        src: "vsphere-csi-cp.yaml.j2"
         dest: "/etc/rancher/{{ k8s_dist }}/config.yaml.d/vsphere-csi.yaml"
         mode: '0644'
 
