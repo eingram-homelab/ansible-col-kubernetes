@@ -9,13 +9,13 @@ spec:
     - websecure
   routes:
     - kind: Rule
-      match: Host(`argocd-{{ cluster }}.local.lan`)
+      match: Host(`argocd-{{ cluster }}.ycdisp.net`)
       priority: 10
       services:
         - name: argocd-server
           port: 80
     - kind: Rule
-      match: Host(`argocd-{{ cluster }}.local.lan`) && Header(`Content-Type`, `application/grpc`)
+      match: Host(`argocd-{{ cluster }}.ycdisp.net`) && Header(`Content-Type`, `application/grpc`)
       priority: 11
       services:
         - name: argocd-server

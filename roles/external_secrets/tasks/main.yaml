@@ -7,16 +7,25 @@
 
 - name: Create external-secrets k8s namespace
   kubernetes.core.k8s:
-    name: external-secrets
+    name: "{{ external_secrets_namespace }}"
     api_version: v1
     kind: Namespace
     state: present
 
 - name: Download external-secrets CRD bundle
   ansible.builtin.uri:
-    url: https://raw.githubusercontent.com/external-secrets/external-secrets/{{ external_secrets_ver }}/deploy/crds/bundle.yaml
+    url: https://raw.githubusercontent.com/external-secrets/external-secrets/{{ external_secrets_chart_ver }}/deploy/crds/bundle.yaml
     dest: "{{ dest }}external-secrets-crd.yaml"
     mode: '0644'
+
+- name: Install external-secrets CRDs
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ external_secrets_namespace }}"
+    src: "{{ dest }}external-secrets-crd.yaml"
+    apply: true
+    server_side_apply:
+      field_manager: ansible
 
 - name: Add external-secrets chart repo
   kubernetes.core.helm_repository:
@@ -32,7 +41,8 @@
     chart_version: "{{ external_secrets_chart_ver }}"
     wait: true
     update_repo_cache: true
-    skip_crds: true
+    set_values:
+      - value: installCRDs=false
 
 - name: Download files to host
   ansible.builtin.copy:

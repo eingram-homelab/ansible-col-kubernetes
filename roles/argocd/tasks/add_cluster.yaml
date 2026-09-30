@@ -1,0 +1,7 @@
+# Create sa on remote cluster
+# Create token secrete and Generate bearer token on remote cluster
+# ensure token is created
+# Use bearer token combined with remote server api server-ca.crt (/var/lib/rancher/rke2/server/tls/server-ca.crt)
+# register remote cluster with argocd and confirm addition
+## TO DO - Add mechanism to auto rotate bearer token
+
