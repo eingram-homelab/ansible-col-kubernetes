@@ -16,15 +16,15 @@ cluster_name: "ycd-rke2" # noqa var-naming[no-role-prefix]
 dedicated_cp_nodes: true # noqa var-naming[no-role-prefix]
 
 base_components: # noqa var-naming[no-role-prefix]
-  - vsphere_csi
-  - ingress_nginx
-  - argocd
-  - vault
+  # - argocd
   - external_secrets
-  - external_dns
+  # - external_dns
 
+# vSphere-CSI configuration
+rancher_vsphere_csi: true
 vsphere_env: vcsa-2.company.ycdisp.com # noqa var-naming[no-role-prefix]
 vsphere_datacenter: "HomeLab Datacenter 2" # noqa var-naming[no-role-prefix]
+
 k8s_ver: "v1.35.8+rke2r1" # noqa var-naming[no-role-prefix]
 k8s_dist: "rke2" # noqa var-naming[no-role-prefix]
 k8s_region: "region-2" # noqa var-naming[no-role-prefix]

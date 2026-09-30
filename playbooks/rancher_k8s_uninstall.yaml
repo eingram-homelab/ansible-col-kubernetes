@@ -1,0 +1,31 @@
+---
+# Usage:
+# ansible-playbook rancher_k8s_uninstall.yaml -e hostvar=<inventory-group-or-host> -e k8s_dist=<k3s-or-rke2>
+# The uninstall script and service names are selected from k8s_dist.
+- name: Uninstall Rancher Kubernetes Cluster
+  hosts: "{{ hostvar | default('') }}"
+  gather_facts: false
+  become: true
+  become_method: ansible.builtin.sudo
+  strategy: free
+
+  tasks:
+
+    - name: Assert k8s_dist is defined
+      ansible.builtin.assert:
+        that:
+          - k8s_dist is defined
+        fail_msg: "k8s_dist variable is not defined"
+
+    - name: Run uninstaller
+      ansible.builtin.command:
+        cmd: "/usr/bin/{{ k8s_dist }}-uninstall.sh"
+    
+    - name: Reboot server after uninstallation
+      ansible.builtin.reboot:
+        reboot_timeout: 600
+
+    - name: Wait for server to come back online
+      ansible.builtin.wait_for_connection:
+        timeout: 600
+        delay: 10

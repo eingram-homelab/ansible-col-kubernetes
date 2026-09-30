@@ -1,0 +1,8 @@
+kube-apiserver-arg+:
+  - "--oidc-issuer-url=https://keycloak.ycdisp.net:8443/realms/k8s"
+  - "--oidc-client-id=kubernetes"
+  - "--oidc-username-claim=email"
+  - "--oidc-groups-claim=groups"
+  - "--oidc-username-prefix=oidc:"
+  - "--oidc-groups-prefix=oidc:"
+  - "--oidc-ca-file=/etc/pki/ca-trust/source/anchors/homelab_root.crt"
