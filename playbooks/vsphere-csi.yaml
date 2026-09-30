@@ -8,16 +8,21 @@
   become: false
 
   tasks:
-
-    - name: Assert cluster set
+        
+    - name: Assert cluster_name set
       ansible.builtin.assert:
         that:
-          - cluster is defined
+          - cluster_name is defined
+
+    - name: Load cluster vars
+      ansible.builtin.include_role:
+        name: eingram23.kubernetes.rancher
+        tasks_from: cluster_env
 
     - name: Set environment
       ansible.builtin.import_role:
         name: eingram23.kubernetes.kubeconfig
-        tasks_from: create_local_kube
+        tasks_from: create_local_kubeconfig
 
     - name: Deploy vsphere-csi
       ansible.builtin.include_role:
